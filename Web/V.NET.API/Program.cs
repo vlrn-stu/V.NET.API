@@ -8,6 +8,17 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowBlazorClient", builder =>
+    {
+        builder.WithOrigins("https://valrina.com")
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+
+
 // Configure Entity Framework with PostgreSQL
 builder.Services.AddDbContext<UrlShortenerDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -29,6 +40,8 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+app.UseCors("AllowBlazorClient");
 
 // Apply migrations on startup
 using (var scope = app.Services.CreateScope())
