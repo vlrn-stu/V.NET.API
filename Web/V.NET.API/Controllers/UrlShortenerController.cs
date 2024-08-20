@@ -42,8 +42,19 @@ namespace V.NET.API.Controllers
                 return NotFound();
             }
 
+            var requestLog = new RequestLog
+            {
+                UrlMappingId = urlMapping.Id,
+                RequesterIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
+                UserAgent = Request.Headers?.UserAgent.FirstOrDefault()
+            };
+
+            _context.RequestLogs.Add(requestLog);
+            await _context.SaveChangesAsync();
+
             return Redirect(urlMapping.OriginalUrl);
         }
+
 
         private static string GenerateShortCode()
         {

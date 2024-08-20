@@ -19,5 +19,7 @@ namespace V.NET.API.Models
 
         [Required]
         public string RequesterIp { get; set; } = default!;
+
+        public ICollection<RequestLog> RequestLogs { get; set; } = new List<RequestLog>();
     }
 }
