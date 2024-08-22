@@ -55,6 +55,24 @@ namespace V.NET.API.Controllers
             return Redirect(urlMapping.OriginalUrl);
         }
 
+        [HttpGet("{shortCode}/logs")]
+        public async Task<IActionResult> ViewLogs(string shortCode)
+        {
+            var urlMapping = await _context.UrlMappings
+                .FirstOrDefaultAsync(u => u.ShortCode == shortCode);
+
+            if (urlMapping == null)
+            {
+                return NotFound();
+            }
+
+            var logs = await _context.RequestLogs
+                .Where(rl => rl.UrlMappingId == urlMapping.Id)
+                .ToListAsync();
+
+            return Ok(logs);
+        }
+
 
         private static string GenerateShortCode()
         {

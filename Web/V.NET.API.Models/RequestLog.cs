@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace V.NET.API.Models
 {
@@ -11,6 +12,7 @@ namespace V.NET.API.Models
         [Required]
         public int UrlMappingId { get; set; }
 
+        [JsonIgnore]
         [ForeignKey("UrlMappingId")]
         public UrlMapping UrlMapping { get; set; } = default!;
 
