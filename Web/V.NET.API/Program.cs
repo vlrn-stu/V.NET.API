@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.RateLimiting;
@@ -14,10 +15,10 @@ builder.Services.AddCors(options =>
     {
         builder.WithOrigins("https://valrina.com")
                .AllowAnyMethod()
-               .AllowAnyHeader();
+               .AllowAnyHeader()
+               .AllowCredentials();
     });
 });
-
 
 // Configure Entity Framework with PostgreSQL
 builder.Services.AddDbContext<UrlShortenerDbContext>(options =>
@@ -39,9 +40,17 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-var app = builder.Build();
+// Configure Forwarded Headers to handle X-Forwarded-For
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 
-app.UseCors("AllowBlazorClient");
+    // Clear default known networks and proxies to allow all
+    options.KnownNetworks.Clear(); // Only loopback proxies are allowed by default
+    options.KnownProxies.Clear();  // Clear the default known proxies (none in this case)
+});
+
+var app = builder.Build();
 
 // Apply migrations on startup
 using (var scope = app.Services.CreateScope())
@@ -56,8 +65,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseHsts(); // Enable HSTS in production
+}
 
 app.UseHttpsRedirection();
+app.UseCors("AllowBlazorClient");
+
+// Apply forwarded headers middleware before authentication and other middlewares
+app.UseForwardedHeaders();
 
 // Enable Rate Limiting Middleware globally
 app.UseRateLimiter();

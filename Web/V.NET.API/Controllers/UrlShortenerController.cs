@@ -10,6 +10,26 @@ namespace V.NET.API.Controllers
     public class UrlShortenerController(UrlShortenerDbContext context) : ControllerBase
     {
         private readonly UrlShortenerDbContext _context = context;
+        #region Helpers
+
+        // Helper method to get the client's IP address
+        private string GetRequesterIp()
+        {
+            // Check if the X-Forwarded-For header is present
+            var forwardedFor = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+
+            if (!string.IsNullOrEmpty(forwardedFor))
+            {
+                // X-Forwarded-For may contain multiple IPs, the first one is the original client IP
+                var ipAddress = forwardedFor.Split(',').First().Trim();
+                return ipAddress;
+            }
+
+            // Fallback to the remote IP address if X-Forwarded-For is not present
+            return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+        }
+
+        #endregion
 
         [HttpPost]
         public async Task<IActionResult> ShortenUrl([FromBody] string originalUrl)
@@ -22,7 +42,7 @@ namespace V.NET.API.Controllers
             {
                 ShortCode = shortCode,
                 OriginalUrl = originalUrl,
-                RequesterIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown"
+                RequesterIp = GetRequesterIp()
             };
 
             _context.UrlMappings.Add(urlMapping);
@@ -45,8 +65,8 @@ namespace V.NET.API.Controllers
             var requestLog = new RequestLog
             {
                 UrlMappingId = urlMapping.Id,
-                RequesterIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
-                UserAgent = Request.Headers?.UserAgent.FirstOrDefault()
+                RequesterIp = GetRequesterIp(),
+                UserAgent = Request.Headers.UserAgent.FirstOrDefault()
             };
 
             _context.RequestLogs.Add(requestLog);
@@ -72,7 +92,6 @@ namespace V.NET.API.Controllers
 
             return Ok(logs);
         }
-
 
         private static string GenerateShortCode()
         {
