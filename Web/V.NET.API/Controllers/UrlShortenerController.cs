@@ -15,7 +15,15 @@ namespace V.NET.API.Controllers
         // Helper method to get the client's IP address
         private string GetRequesterIp()
         {
-            // Check if the X-Forwarded-For header is present
+            // Check for the Cloudflare header CF-Connecting-IP first
+            var cloudflareIp = HttpContext.Request.Headers["CF-Connecting-IP"].FirstOrDefault();
+
+            if (!string.IsNullOrEmpty(cloudflareIp))
+            {
+                return cloudflareIp;
+            }
+
+            // If Cloudflare header isn't present, check X-Forwarded-For header
             var forwardedFor = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
 
             if (!string.IsNullOrEmpty(forwardedFor))
@@ -25,7 +33,7 @@ namespace V.NET.API.Controllers
                 return ipAddress;
             }
 
-            // Fallback to the remote IP address if X-Forwarded-For is not present
+            // Fallback to the remote IP address if no headers are present
             return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
         }
 
